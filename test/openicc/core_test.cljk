@@ -548,7 +548,7 @@
   (let [c (communication/compose {:situation-id :s :crime :crimes-against-humanity
                                   :findings (:dossier/findings (good-dossier))
                                   :assertions (good-assertions)}
-                                 {:at at :hash-fn hash-fn :submitter-did "did:web:openicc.etzhayyim.com"})
+                                 {:at at :hash-fn hash-fn :submitter-did "did:web:openicc.itonami.cloud"})
         body (:communication/body c)]
     (is (str/includes? body "Article 15(2)"))
     (is (str/includes? body "It is alleged, on the sources cited"))

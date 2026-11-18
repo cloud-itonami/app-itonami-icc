@@ -1,7 +1,7 @@
 # openicc — 国際刑事裁判所の手続を、自律分散で回す bots
 
-**DID**: `did:web:openicc.etzhayyim.com`
-**Namespace**: `openicc.*` · **Lexicons**: `com.etzhayyim.openicc.*`
+**DID**: `did:web:openicc.itonami.cloud`
+**Namespace**: `openicc.*` · **Lexicons**: `cloud.itonami.openicc.*`
 **ADR**: [ADR-2608220100](https://github.com/com-junkawasaki/root/blob/main/90-docs/adr/2608220100-openicc-autonomous-icc-procedure-bots.edn)
 **Status**: R0 — 9 bots 実装済み・14 憲章ゲート実装済み・全ゲート両方向テスト済み。**live 稼働なし・実データなし・一度も送信していない。**
 

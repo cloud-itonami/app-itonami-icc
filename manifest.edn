@@ -7,7 +7,7 @@
 {:actor/id "openicc"
  :actor/glyph "国際刑事"
  :actor/display-name "openicc — Autonomous Rome Statute procedure bots"
- :actor/did "did:web:openicc.etzhayyim.com"
+ :actor/did "did:web:openicc.itonami.cloud"
  :actor/tier :tier-b
  :actor/status :r0
  :actor/adr ["adr-2608220100-openicc-autonomous-icc-procedure-bots"]
@@ -82,15 +82,15 @@
                    :note "the alias is the SSoT; a concrete model id here would be stale within weeks"}
 
  :actor/lexicons
- ["com.etzhayyim.openicc.informationItem"
-  "com.etzhayyim.openicc.elementFinding"
-  "com.etzhayyim.openicc.jurisdictionFinding"
-  "com.etzhayyim.openicc.admissibilityAssessment"
-  "com.etzhayyim.openicc.interestsFinding"
-  "com.etzhayyim.openicc.rebuttal"
-  "com.etzhayyim.openicc.article15Communication"
-  "com.etzhayyim.openicc.quorumCertificate"
-  "com.etzhayyim.openicc.ledgerEntry"]
+ ["cloud.itonami.openicc.informationItem"
+  "cloud.itonami.openicc.elementFinding"
+  "cloud.itonami.openicc.jurisdictionFinding"
+  "cloud.itonami.openicc.admissibilityAssessment"
+  "cloud.itonami.openicc.interestsFinding"
+  "cloud.itonami.openicc.rebuttal"
+  "cloud.itonami.openicc.article15Communication"
+  "cloud.itonami.openicc.quorumCertificate"
+  "cloud.itonami.openicc.ledgerEntry"]
 
  :actor/measured
  {:date "2026-08-22"
