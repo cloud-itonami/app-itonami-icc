@@ -16,12 +16,17 @@ test("descriptor declares local state and no external operation", async () => {
   assert.equal(d.schema, "kotoba.app.client-runtime.v1");
   assert.deepEqual(d.operations, []);
   assert.equal(d["local-state"].schema, meta.itonami.storageKey);
+  assert.equal(d.profile, "restricted-wasm-v1");
+  // The sandboxed guest has no storage until the runtime's host-mediated storage (KOTOBA-968).
+  assert.equal(d["local-state"].adapter, "memory");
 });
 
 test("shipped JavaScript has no network API", async () => {
-  for (const f of await readdir(resolve(root, "dist"))) {
-    if (!f.endsWith(".js")) continue;
-    const s = await read("dist/" + f);
+  // The host files and the guest's modules and compiled domain (inlined into dist/host-data.js).
+  const files = [...(await readdir(resolve(root, "dist"))).map((f) => "dist/" + f), ...(await readdir(resolve(root, ".guest-modules"))).map((f) => ".guest-modules/" + f)];
+  for (const f of files) {
+    if (!f.endsWith(".js") || f.endsWith("kotoba-client-runtime.js") || f.endsWith("host-data.js")) continue;
+    const s = await read(f);
     for (const api of [/\bfetch\s*\(/, /XMLHttpRequest/, /WebSocket/, /EventSource/, /sendBeacon/, /importScripts/]) assert.doesNotMatch(s, api, `${f}: ${api}`);
   }
 });
@@ -33,6 +38,7 @@ test("CSP is strict in the page and in Tauri", async () => {
     assert.match(csp, /default-src 'none'/);
     assert.match(csp, /connect-src ipc: http:\/\/ipc\.localhost;/);
     assert.doesNotMatch(csp, /unsafe-|https?:\/\/(?!ipc\.localhost)/);
+    assert.match(csp, /script-src 'self' 'sha256-[^']+' 'sha256-[^']+' 'sha256-[^']+'; style-src 'self' 'sha256-[^']+';/);
   }
   assert.equal(conf.identifier, meta.itonami.id);
 });
@@ -48,13 +54,13 @@ test("release.json pins every shipped file", async () => {
   for (const [name, digest] of Object.entries(rel.files)) {
     assert.equal(createHash("sha256").update(await readFile(resolve(root, "dist", name))).digest("hex"), digest, name);
   }
-  assert.ok(rel.files["domain.js"]);
+  assert.ok(rel.files["host-data.js"] && rel.guest?.sha256);
 });
 
 test("every action's example runs in the compiled domain", async () => {
   const ctx = vm.createContext({ console });
   ctx.globalThis = ctx;
-  vm.runInContext(await read("dist/domain.js"), ctx, { filename: "domain.js" });
+  vm.runInContext(await read(".guest-modules/domain.js"), ctx, { filename: "domain.js" });
   const api = ctx.itonami.app.run;
   const actions = Array.from(api.actions());
   assert.ok(actions.length > 0);

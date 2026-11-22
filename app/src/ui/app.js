@@ -3,6 +3,7 @@
 // DOM from text nodes only (no HTML strings) and makes no network request.
 import { LocalStore } from "./local-store.js";
 import { app } from "./app-def.js";
+import { bindForm } from "./guest-form.js";
 
 function storage() { try { return globalThis.localStorage ?? null; } catch { return null; } }
 const local = storage();
@@ -82,11 +83,7 @@ function sealPanel() {
   const state = store.sealedState();
   const value = (form, name) => form.elements.namedItem(name).value;
   if (state === "unlocked") {
-    const form = el("form", { class: "card seal", onsubmit: (ev) => {
-      ev.preventDefault();
-      if (value(form, "next") !== value(form, "next2")) { ui.error = "新しいパスフレーズが一致しません。"; renderNotice(); return; }
-      sealedStep(() => store.changeSealPassphrase(value(form, "current"), value(form, "next")));
-    } },
+    const form = el("form", { class: "card seal" },
       el("h3", {}, "封をした記録: 開いています"),
       el("p", { class: "muted" }, "この画面を閉じるか「鍵をかける」を押すまで、封をした記録を読み書きできます。"),
       el("button", { type: "button", onclick: () => { store.lockSealed(); ui.result = null; ui.error = null; render(); } }, "鍵をかける"),
@@ -94,36 +91,44 @@ function sealPanel() {
         passField("current", "今のパスフレーズ", "current-password"),
         passField("next", "新しいパスフレーズ", "new-password"),
         passField("next2", "新しいパスフレーズ（確認）", "new-password"),
-        el("button", { type: "submit" }, "変える")));
+        el("button", { type: "button", "data-submit": true }, "変える")));
+    bindForm(form, () => {
+      if (value(form, "next") !== value(form, "next2")) { ui.error = "新しいパスフレーズが一致しません。"; renderNotice(); return; }
+      sealedStep(() => store.changeSealPassphrase(value(form, "current"), value(form, "next")));
+    });
     return form;
   }
   if (state === "locked") {
-    const form = el("form", { class: "card seal", onsubmit: (ev) => { ev.preventDefault(); sealedStep(() => store.unlockSealed(value(form, "pass"))); } },
+    const form = el("form", { class: "card seal" },
       el("h3", {}, "封をした記録: 鍵がかかっています"),
       passField("pass", "パスフレーズ", "current-password"),
-      el("button", { type: "submit" }, "開く"));
+      el("button", { type: "button", "data-submit": true }, "開く"));
+    bindForm(form, () => sealedStep(() => store.unlockSealed(value(form, "pass"))));
     return form;
   }
-  const form = el("form", { class: "card seal", onsubmit: (ev) => {
-    ev.preventDefault();
-    if (value(form, "pass") !== value(form, "pass2")) { ui.error = "パスフレーズが一致しません。"; renderNotice(); return; }
-    sealedStep(() => store.setupSealKey(value(form, "pass")));
-  } },
+  const form = el("form", { class: "card seal" },
     el("h3", {}, "封をした記録のパスフレーズを決める"),
     el("p", { class: "muted" }, "封をした記録は、このパスフレーズから作る鍵で暗号化して保存します。パスフレーズを忘れると、封をした記録は誰にも読めなくなります。"),
     passField("pass", "パスフレーズ（8 文字以上）", "new-password"),
     passField("pass2", "パスフレーズ（確認）", "new-password"),
-    el("button", { type: "submit" }, "設定する"));
+    el("button", { type: "button", "data-submit": true }, "設定する"));
+  bindForm(form, () => {
+    if (value(form, "pass") !== value(form, "pass2")) { ui.error = "パスフレーズが一致しません。"; renderNotice(); return; }
+    sealedStep(() => store.setupSealKey(value(form, "pass")));
+  });
   return form;
 }
 
 function actionCard(action) {
-  const form = el("form", { class: "card", onsubmit: (ev) => { ev.preventDefault(); runAction(action, form); } },
+  // The restricted-wasm-v1 sandbox has no allow-forms (B5): bindForm (itonami-lib) ties the button
+  // and Enter in a single-line field to the handler; no submit event is relied on.
+  const form = el("form", { class: "card" },
     el("h3", {}, action.label),
     action.help ? el("p", { class: "muted" }, action.help) : null,
     ...action.fields.map((field) => el("label", { for: `f-${action.name}-${field.name}` },
       el("span", {}, field.label + (field.required ? " *" : "")), fieldControl(action, field))),
-    el("button", { type: "submit" }, "実行"));
+    el("button", { type: "button", "data-submit": true }, "実行"));
+  bindForm(form, () => runAction(action, form));
   return form;
 }
 
@@ -148,7 +153,8 @@ function aboutView() {
   return el("section", { class: "card" },
     el("h3", {}, app.title),
     el("p", {}, app.description),
-    el("p", { class: "muted" }, "データはこの端末の中だけに保存されます（localStorage）。外部への通信はしません。"),
+    el("p", { class: "muted" }, local ? "データはこの端末の中だけに保存されます（localStorage）。外部への通信はしません。"
+      : "この版では、データを端末に保存できません（画面を閉じると消えます）。外部への通信はしません。"),
     app.sealed ? el("p", { class: "muted" }, "封をした記録は AES-GCM で暗号化して保存します。鍵はパスフレーズから PBKDF2 で作る鍵で包んで保存し、開いている間だけメモリに置きます。") : null,
     el("p", { class: "muted mono" }, app.did),
     // Two-step reset instead of window.confirm(), which some OS WebViews do not show.
@@ -181,5 +187,4 @@ function renderNotice() {
 }
 
 render();
-const tauri = globalThis.__TAURI__;
-if (tauri?.core?.invoke) tauri.core.invoke("awai_host_info").then((info) => { document.getElementById("env").textContent = info?.app ?? ""; }).catch(() => {});
+// The Tauri host info is shown by the host page (host.js): the sandboxed guest has no IPC.

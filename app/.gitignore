@@ -4,3 +4,4 @@
 /.cpcache/
 /src-tauri/target/
 /src-tauri/gen/schemas/
+/.guest-modules/
