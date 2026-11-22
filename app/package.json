@@ -17,8 +17,8 @@
     "build": "node scripts/build.mjs",
     "test": "npm run build && node --test test/*.test.mjs",
     "tauri": "tauri",
-    "build:desktop": "npm run build && tauri build --no-bundle",
-    "build:android": "sh scripts/android-apk.sh"
+    "build:desktop": "node scripts/deploy-gate.mjs && npm run build && tauri build --no-bundle",
+    "build:android": "node scripts/deploy-gate.mjs && sh scripts/android-apk.sh"
   },
   "devDependencies": {
     "@tauri-apps/cli": "3.0.0-alpha.6"

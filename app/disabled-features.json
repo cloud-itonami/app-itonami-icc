@@ -1,0 +1,12 @@
+{
+  "schema": "itonami.disabled-features.v1",
+  "note": "Features that worked before the restricted-wasm-v1 move and are off now. Decision 2026-11-22: the app is not released while this list is not empty (scripts/deploy-gate.mjs). Remove an entry only when the feature works again.",
+  "features": [
+    {
+      "id": "records-kept",
+      "label": "記録が端末に残る（閉じても消えない）",
+      "reason": "The sandboxed guest has no storage until the runtime's host-mediated storage.",
+      "waits-for": "KOTOBA-968"
+    }
+  ]
+}
